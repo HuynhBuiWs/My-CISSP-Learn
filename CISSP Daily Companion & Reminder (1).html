@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CISSP 12-Week Master Tracker & Daily Coach</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cissp: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0265d2',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            gold: '#f59e0b',
+                            emerald: '#10b981',
+                            violet: '#8b5cf6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar & Animations */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 1);
+        }
+        .glow-effect {
+            box-shadow: 0 0 25px -5px rgba(2, 132, 199, 0.3);
+        }
+        .glow-gold {
+            box-shadow: 0 0 20px -3px rgba(245, 158, 11, 0.3);
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.03); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .animate-pulse-ring {
+            animation: pulse-ring 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-cissp-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cissp-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-cissp-600/30">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-cyan-400 bg-clip-text text-transparent">
+                        CISSP Daily Coach
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium hidden sm:block">12-Week Master Study Plan & Daily Practice Bank</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-4">
+                <!-- Cloud Sync Status Badge -->
+                <div id="cloudSyncBadge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-xs font-semibold cursor-pointer" onclick="toggleReminderModal()" title="Trạng thái Đồng bộ Cloud">
+                    <span class="w-2 h-2 rounded-full bg-slate-500" id="syncDot"></span>
+                    <span id="syncText">Cloud Off</span>
+                </div>
+
+                <!-- Streak Badge -->
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
+                    <svg class="w-4 h-4 fill-current animate-bounce" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-1.348l-3.75 3.75a1 1 0 00-.273.662V12a1 1 0 001 1h6a1 1 0 001-1V5.578a1 1 0 00-.293-.707l-3.234-3.318zM10.5 7.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd"/>
+                        <path d="M12.31 3.298a1 1 0 00-1.32-.232l-3.5 2.5A1 1 0 007 6.382V14a2 2 0 002 2h6a2 2 0 002-2V8.586a1 1 0 00-.293-.707l-4.397-4.581z"/>
+                    </svg>
+                    <span id="streakDisplay">0 Ngày Streak</span>
+                </div>
+
+                <!-- Reminder Bell Setting -->
+                <button id="reminderBtn" onclick="toggleReminderModal()" class="relative p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700/60" title="Cấu hình nhắc nhở học tập">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    <span id="reminderBadge" class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900 hidden"></span>
+                </button>
+
+                <!-- Audio Sound Test -->
+                <button onclick="playChimeSound()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700/60" title="Thử Âm Báo">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Day Selector & Study Overview (4 cols) -->
+        <section class="lg:col-span-4 flex flex-col gap-6">
+            <!-- Active Day Card -->
+            <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 rounded-2xl p-6 border border-slate-800 shadow-xl relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-cissp-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-cissp-500 bg-cissp-500/10 px-3 py-1 rounded-full border border-cissp-500/20" id="currentPhaseTag">Giai Đoạn 1</span>
+                    <span class="text-xs text-slate-400 font-mono" id="currentDomainTag">Domain 1</span>
+                </div>
+
+                <h2 class="text-2xl font-black text-white mb-1" id="currentDayTitle">Ngày 1 / 84</h2>
+                <p class="text-sm text-slate-300 font-medium mb-6 line-clamp-2" id="currentTopicText">CIA Triad & Security Governance Principles</p>
+
+                <!-- Overall Progress Bar -->
+                <div class="space-y-2 mb-6">
+                    <div class="flex justify-between text-xs font-medium">
+                        <span class="text-slate-400">Tiến độ 12 Tuần</span>
+                        <span class="text-cyan-400 font-bold" id="progressPercent">1% (1/84 Ngày)</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                        <div id="progressBar" class="h-full bg-gradient-to-r from-cissp-600 via-cyan-400 to-emerald-400 rounded-full transition-all duration-500" style="width: 1.19%;"></div>
+                    </div>
+                </div>
+
+                <!-- Action Button Grid -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="openTimerModal()" class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-cissp-600 to-cissp-500 hover:from-cissp-500 hover:to-cyan-500 text-white font-semibold text-sm shadow-md shadow-cissp-600/20 transition active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Bắt Đầu 2 Tiếng
+                    </button>
+                    
+                    <button id="markCompleteBtn" onclick="toggleCompleteCurrentDay()" class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition active:scale-95">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span id="completeBtnText">Đánh Dấu Hoàn Thành</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Schedule Explorer Navigator -->
+            <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 flex flex-col flex-1 max-h-[500px]">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <svg class="w-4 h-4 text-cissp-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Lịch Học 84 Ngày
+                    </h3>
+                    <select id="domainFilter" onchange="filterDaysList()" class="bg-slate-800 border border-slate-700 text-xs text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-cissp-500">
+                        <option value="ALL">Tất cả Domains</option>
+                        <option value="Domain 1">Domain 1: Security & Risk</option>
+                        <option value="Domain 2">Domain 2: Asset Security</option>
+                        <option value="Domain 3">Domain 3: Security Architecture</option>
+                        <option value="Domain 4">Domain 4: Network Security</option>
+                        <option value="Domain 5">Domain 5: IAM</option>
+                        <option value="Domain 6">Domain 6: Assessment & Testing</option>
+                        <option value="Domain 7">Domain 7: Security Operations</option>
+                        <option value="Domain 8">Domain 8: Software Security</option>
+                    </select>
+                </div>
+
+                <!-- Days Scroll Area -->
+                <div id="daysListContainer" class="space-y-2 overflow-y-auto pr-1 flex-1">
+                    <!-- Dynamic rendering of 84 days items -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Interactive Content & Practice Drill (8 cols) -->
+        <section class="lg:col-span-8 flex flex-col gap-6">
+            <!-- Navigation Tabs for Content -->
+            <div class="bg-slate-900 p-1.5 rounded-2xl border border-slate-800 flex items-center gap-2 text-sm">
+                <button id="tabDetailBtn" onclick="switchTab('detail')" class="flex-1 py-2.5 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 bg-cissp-600 text-white shadow-md">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                    Nhiệm Vụ Học Trong Ngày
+                </button>
+                <button id="tabQuizBtn" onclick="switchTab('quiz')" class="flex-1 py-2.5 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 bg-slate-800 text-slate-400 hover:text-slate-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Luyện 10 Câu Hỏi Practice
+                </button>
+                <button id="tabAiBtn" onclick="switchTab('ai')" class="flex-1 py-2.5 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 bg-slate-800 text-slate-400 hover:text-slate-200">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    Tạo Đề Mới (AI)
+                </button>
+            </div>
+
+            <!-- Tab 1: Daily Learning Breakdown & Schedule -->
+            <div id="tabDetailContent" class="bg-slate-900 rounded-2xl p-6 border border-slate-800 space-y-6">
+                <div class="border-b border-slate-800 pb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-cissp-500 uppercase tracking-wider" id="detailDomainHeader">DOMAIN 1: SECURITY & RISK MANAGEMENT</span>
+                        <span class="text-xs font-mono bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md" id="detailTimeTarget">Thời gian: 2 Tiếng/Ngày</span>
+                    </div>
+                    <h2 class="text-xl font-extrabold text-white" id="detailTopicHeader">Lý thuyết & Trọng tâm học tập</h2>
+                </div>
+
+                <!-- 3-Step Daily Breakdown Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/60 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center gap-2 text-cissp-500 text-xs font-bold mb-2">
+                                <span class="w-6 h-6 rounded-lg bg-cissp-500/20 flex items-center justify-center text-cissp-400">1</span>
+                                60 PHÚT LÝ THUYẾT
+                            </div>
+                            <p class="text-xs text-slate-300 leading-relaxed" id="step1Text">Đọc OSG / Xem video Destination CISSP về CIA Triad, Governance & Legal Frameworks.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/60 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center gap-2 text-amber-400 text-xs font-bold mb-2">
+                                <span class="w-6 h-6 rounded-lg bg-amber-400/20 flex items-center justify-center text-amber-400">2</span>
+                                30 PHÚT DRILL
+                            </div>
+                            <p class="text-xs text-slate-300 leading-relaxed" id="step2Text">Giải 10 câu hỏi tình huống tình huống trực tiếp liên quan đến bài học.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/60 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold mb-2">
+                                <span class="w-6 h-6 rounded-lg bg-emerald-400/20 flex items-center justify-center text-emerald-400">3</span>
+                                30 PHÚT REVIEW
+                            </div>
+                            <p class="text-xs text-slate-300 leading-relaxed" id="step3Text">Phân tích sâu đáp án đúng/sai với tư duy Managerial Mindset (Risk/Process > Fix).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Key Concepts Section -->
+                <div class="bg-slate-950 p-5 rounded-xl border border-slate-800/80 space-y-3">
+                    <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        Khái niệm trọng tâm cần làm chủ hôm nay:
+                    </h3>
+                    <ul class="space-y-2 text-xs text-slate-300 pl-4 list-disc leading-relaxed" id="keyConceptsList">
+                        <li>Cân bằng giữa Confidentiality, Integrity và Availability.</li>
+                        <li>Sự tương thích giữa Security Governance và Mục tiêu Kinh doanh chiến lược.</li>
+                        <li>Vai trò cố vấn rủi ro (Risk Advisor) của CISO thay vì cấm đoán hoạt động kinh doanh.</li>
+                    </ul>
+                </div>
+
+                <!-- Fast Actions -->
+                <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+                    <button onclick="switchTab('quiz')" class="px-5 py-2.5 rounded-xl bg-cissp-600 hover:bg-cissp-500 text-white font-semibold text-xs flex items-center gap-2 transition">
+                        Chuyển sang 10 câu thực hành
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
+                    </button>
+                    <button onclick="copyDayToNotebookLM()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs flex items-center gap-2 transition border border-slate-700">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Copy Nội Dung Cho NotebookLM
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 2: Interactive Practice Quiz -->
+            <div id="tabQuizContent" class="bg-slate-900 rounded-2xl p-6 border border-slate-800 space-y-6 hidden">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div>
+                        <span class="text-xs font-semibold text-amber-400 uppercase tracking-wider" id="quizDayHeader">DRILL NGÀY 1</span>
+                        <h2 class="text-lg font-bold text-white">Luyện 10 Câu Hỏi Thực Hành Tình Huống</h2>
+                    </div>
+                    <div class="text-xs font-mono bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">
+                        Điểm: <span id="quizScoreText" class="text-emerald-400 font-bold">0</span> / <span id="quizTotalText">10</span>
+                    </div>
+                </div>
+
+                <!-- Quiz Progress Bar -->
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div id="quizProgressBar" class="bg-amber-400 h-full transition-all duration-300" style="width: 10%;"></div>
+                </div>
+
+                <!-- Question View Box -->
+                <div id="quizQuestionBox" class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <span class="px-2.5 py-1 bg-cissp-500/20 text-cissp-400 font-mono font-bold text-xs rounded-lg border border-cissp-500/30 shrink-0" id="qNumberTag">Q1</span>
+                        <p class="text-sm text-slate-100 font-medium leading-relaxed" id="qQuestionText">
+                            Mục tiêu chính của Quản trị An toàn Thông tin (Information Security Governance) trong một tổ chức là gì?
+                        </p>
+                    </div>
+
+                    <!-- Answer Options -->
+                    <div class="space-y-2.5 pt-2" id="qOptionsContainer">
+                        <!-- Dynamic Options rendered in JS -->
+                    </div>
+
+                    <!-- Managerial Explanation Rationale Modal / Card -->
+                    <div id="qExplanationBox" class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2 hidden">
+                        <div class="font-bold flex items-center gap-2 text-cyan-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Phân tích Tư duy CISSP (Managerial Mindset):
+                        </div>
+                        <p id="qExplanationText" class="text-slate-300 leading-relaxed">
+                            Quản trị an ninh (Governance) không phải là về công cụ hay kỹ thuật mà là việc căn chỉnh (align) an ninh thông tin với mục tiêu kinh doanh của tổ chức.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quiz Controls -->
+                <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+                    <button id="prevQBtn" onclick="navigateQuiz(-1)" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold disabled:opacity-40" disabled>
+                        ← Câu trước
+                    </button>
+                    <span class="text-xs text-slate-500 font-mono" id="quizIndexIndicator">1 / 10</span>
+                    <button id="nextQBtn" onclick="navigateQuiz(1)" class="px-4 py-2 rounded-xl bg-cissp-600 hover:bg-cissp-500 text-white text-xs font-semibold">
+                        Câu tiếp →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 3: Gemini AI Dynamic Generator -->
+            <div id="tabAiContent" class="bg-slate-900 rounded-2xl p-6 border border-slate-800 space-y-5 hidden">
+                <div class="border-b border-slate-800 pb-3">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        Tạo Đề Thi Thử Mới Bằng AI
+                    </h2>
+                    <p class="text-xs text-slate-400">Tự động sinh 10 câu hỏi tình huống mới bám sát bài học của ngày hiện tại (Sử dụng Gemini Flash API).</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-2">Độ khó & Phong cách câu hỏi:</label>
+                        <select id="aiStyleSelect" class="w-full bg-slate-950 border border-slate-700 text-sm text-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-cissp-500">
+                            <option value="Managerial Mindset (Think like a CEO/CISO)">Tư duy Quản lý Cấp cao (CISO/CEO) - Chuẩn CISSP</option>
+                            <option value="Technical & Scenario Based">Tình huống Kỹ thuật & Xử lý sự cố</option>
+                            <option value="Extreme Hard (Like real exam)">Khó - Giống đề thi thật ISC2 nhất</option>
+                        </select>
+                    </div>
+
+                    <button onclick="generateAiQuiz()" class="w-full py-3 rounded-xl bg-gradient-to-r from-cissp-600 to-cyan-600 hover:from-cissp-500 hover:to-cyan-500 text-white font-bold text-sm shadow-lg shadow-cyan-900/30 transition flex justify-center items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                        Sinh 10 Câu Hỏi Mới
+                    </button>
+
+                    <div id="aiStatusBox" class="text-xs text-amber-400 bg-amber-400/10 p-3 rounded-lg border border-amber-400/20 text-center font-mono hidden">
+                        <!-- Trạng thái AI -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Timer Modal -->
+    <div id="timerModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl relative text-center p-8">
+            <button onclick="closeTimerModal()" class="absolute top-4 right-4 text-slate-500 hover:text-white transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            
+            <span id="timerSegmentTag" class="inline-block px-3 py-1 bg-cissp-500/20 text-cissp-400 text-xs font-bold rounded-full mb-4 border border-cissp-500/30">Phiên Học 2 Tiếng</span>
+            <div id="timerDigits" class="text-6xl font-black text-white font-mono tracking-wider mb-2 drop-shadow-md">02:00:00</div>
+            <p id="timerSubtext" class="text-sm text-slate-400 mb-8 font-medium">Tập trung cao độ. "Think like a Manager".</p>
+
+            <div class="flex items-center justify-center gap-3 mb-6">
+                <button onclick="setTimerSegment(60, 'Lý Thuyết (60m)', 'Đọc OSG / Xem Video')" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">60m</button>
+                <button onclick="setTimerSegment(30, 'Luyện Drill (30m)', 'Giải 10 câu thực hành')" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">30m</button>
+                <button onclick="setTimerSegment(30, 'Phân Tích (30m)', 'Review đáp án sai')" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">30m</button>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="resetTimer()" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition border border-slate-700">Reset</button>
+                <button id="startTimerBtn" onclick="toggleTimer()" class="flex-1 py-3 rounded-xl bg-cissp-600 hover:bg-cissp-500 text-white font-bold text-sm shadow-lg transition">Bắt Đầu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings & Cloud Sync Modal -->
+    <div id="reminderModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
+                <h3 class="font-bold text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-cissp-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Cài đặt Đồng bộ & Nhắc nhở
+                </h3>
+                <button onclick="toggleReminderModal()" class="text-slate-400 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            
+            <div class="p-5 space-y-5">
+                <!-- Cloud Sync Tự Động -->
+                <div class="p-4 bg-cissp-900/30 border border-cissp-500/30 rounded-xl space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 001-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+                            Mã Đồng Bộ Cloud (Firebase Sync)
+                        </label>
+                        <span id="cloudStatusText" class="text-[10px] text-slate-500 font-mono">Đang tải...</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Nhập cùng mã này trên Điện thoại & Máy tính để tiến độ tự động đồng bộ (Real-time). Không cần đăng nhập!</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="cloudSyncCodeInput" placeholder="Ví dụ: my-cissp-sync-26" class="flex-1 bg-slate-950 border border-slate-700 text-cyan-300 font-mono text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-cissp-500">
+                        <button onclick="applyCloudSyncCode()" class="px-4 py-2 bg-cissp-600 hover:bg-cissp-500 text-white font-bold text-xs rounded-lg transition shrink-0 shadow-md">Áp Dụng</button>
+                    </div>
+                </div>
+
+                <!-- Backup Thủ Công -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-slate-300">Sao lưu Thủ công (Offline Copy-Paste):</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="exportUserData()" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg border border-slate-700 transition">Xuất Mã JSON</button>
+                        <button onclick="importUserData()" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg border border-slate-700 transition">Nhập Mã JSON</button>
+                    </div>
+                </div>
+
+                <!-- Lịch Nhắc Nhở -->
+                <div class="space-y-2 pt-4 border-t border-slate-800">
+                    <label class="block text-xs font-semibold text-slate-300">Giờ nhắc nhở học hàng ngày:</label>
+                    <input type="time" id="reminderTimeInput" value="20:00" class="w-full bg-slate-950 border border-slate-700 text-white text-xl font-mono rounded-xl p-3 focus:outline-none focus:border-cissp-500 text-center">
+                    <div class="flex items-center justify-between pt-2">
+                        <span class="text-xs text-slate-300 font-medium">Bật Thông Báo Trình Duyệt</span>
+                        <input type="checkbox" id="notificationToggle" class="w-5 h-5 rounded border-slate-700 text-cissp-600 focus:ring-cissp-500 bg-slate-950 cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-slate-800 bg-slate-800/30">
+                <button onclick="saveReminderSettings()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl transition shadow-lg shadow-emerald-900/50">Lưu Cài Đặt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification (Thông Báo Tương Tác) -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 bg-slate-800 border border-slate-700 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span id="toastText" class="text-sm font-medium">Hoàn tất!</span>
+    </div>
+
+    <!-- FIREBASE CLOUD SYNC MODULE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cissp-daily-coach';
+        
+        // Parse cấu hình Firebase an toàn
+        let firebaseConfig = null;
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+            }
+        } catch (e) {
+            console.warn("Lỗi parse Firebase Config. Chạy chế độ Offline.");
+        }
+
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let unsubscribeCloudSync = null;
+        let isSyncing = false; // Flag to prevent ping-pong loops
+
+        window.initFirebaseCloud = async function() {
+            if (!firebaseConfig) {
+                updateCloudSyncStatusBadge(false, "Local Mode");
+                return;
+            }
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Ưu tiên token nếu có, không thì đăng nhập nặc danh để ghi/đọc dữ liệu
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (user) {
+                        window.setupCloudSync();
+                    }
+                });
+            } catch (e) {
+                console.error("Lỗi khởi tạo Firebase Cloud:", e);
+                updateCloudSyncStatusBadge(false, "Offline");
+            }
+        };
+
+        window.setupCloudSync = function() {
+            let syncCode = (localStorage.getItem('cissp_cloud_sync_code') || '').trim();
+            if (!syncCode) {
+                syncCode = "cissp-" + Math.floor(Math.random() * 100000);
+                localStorage.setItem('cissp_cloud_sync_code', syncCode);
+            }
+            
+            const codeInput = document.getElementById('cloudSyncCodeInput');
+            if (codeInput) codeInput.value = syncCode;
+
+            if (!db || !currentUser || !syncCode) {
+                updateCloudSyncStatusBadge(false, "Offline");
+                return;
+            }
+
+            // Path Chuẩn: /artifacts/{appId}/public/data/user_progress/{syncCode}
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_progress', syncCode);
+
+            if (unsubscribeCloudSync) unsubscribeCloudSync();
+
+            // Lắng nghe dữ liệu realtime từ Cloud
+            unsubscribeCloudSync = onSnapshot(docRef, (docSnap) => {
+                isSyncing = true;
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    let hasChanges = false;
+                    
+                    if (Array.isArray(data.completedDays) && JSON.stringify(data.completedDays) !== JSON.stringify(completedDays)) {
+                        completedDays = data.completedDays;
+                        localStorage.setItem('cissp_completed_days', JSON.stringify(completedDays));
+                        hasChanges = true;
+                    }
+                    if (data.streak !== undefined && data.streak !== streakCount) {
+                        streakCount = parseInt(data.streak);
+                        localStorage.setItem('cissp_streak', streakCount.toString());
+                        hasChanges = true;
+                    }
+
+                    if (hasChanges && typeof window.updateProgressStats === 'function') {
+                        window.updateProgressStats();
+                        if (typeof window.initDayList === 'function') window.initDayList(document.getElementById('domainFilter').value);
+                        if (typeof window.loadDayDetails === 'function') window.loadDayDetails(currentDayIndex);
+                    }
+                    updateCloudSyncStatusBadge(true, syncCode);
+                } else {
+                    // Document chưa có (mã mới hoàn toàn), đẩy dữ liệu local hiện tại lên
+                    window.saveProgressToCloud();
+                    updateCloudSyncStatusBadge(true, syncCode);
+                }
+                setTimeout(() => isSyncing = false, 500); // Reset cờ
+            }, (err) => {
+                console.error("Firestore sync error:", err);
+                updateCloudSyncStatusBadge(false, "Lỗi Đồng bộ");
+                isSyncing = false;
+            });
+        };
+
+        window.saveProgressToCloud = async function() {
+            if (isSyncing) return; // Prevent loop triggered by incoming snapshot
+            
+            const syncCode = (localStorage.getItem('cissp_cloud_sync_code') || '').trim();
+            if (!db || !currentUser || !syncCode) return;
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_progress', syncCode);
+                await setDoc(docRef, {
+                    completedDays: completedDays,
+                    streak: streakCount,
+                    lastUpdated: new Date().toISOString(),
+                    updatedBy: currentUser.uid
+                }, { merge: true }); // Giữ lại cấu trúc cũ nếu có
+            } catch (err) {
+                console.error("Cloud push failed:", err);
+            }
+        };
+
+        // Kích hoạt Firebase
+        window.initFirebaseCloud();
+    </script>
+
+    <!-- CORE APPLICATION SCRIPT -->
+    <script>
+        // 84-Day Detailed Curriculum Data
+        const cisspDatabase = [
+            // Phase 1
+            { day: 1, domain: 'Domain 1', phase: 'Giai Đoạn 1', title: 'CIA Triad & Security Governance Principles', concepts: ['Security Alignment with Business', 'Confidentiality vs Integrity vs Availability', 'Senior Management Responsibility'] },
+            { day: 2, domain: 'Domain 1', phase: 'Giai Đoạn 1', title: 'Legal, Regulatory & Compliance Frameworks', concepts: ['GDPR, HIPAA, PCI-DSS', 'Transborder Data Flow', 'Computer Crime Regulations'] },
+            { day: 3, domain: 'Domain 1', phase: 'Giai Đoạn 1', title: 'Professional Ethics & Security Policies', concepts: ['ISC2 Code of Ethics', 'Policy hierarchy: Policies, Standards, Guidelines, Procedures'] },
+            { day: 4, domain: 'Domain 1', phase: 'Giai Đoạn 1', title: 'Business Continuity Management (BCM) & BIA', concepts: ['Business Impact Analysis (BIA)', 'MTD, RTO, RPO metrics', 'Critical Business Functions'] },
+            { day: 5, domain: 'Domain 1', phase: 'Giai Đoạn 1', title: 'Risk Management Concepts & Quantitative Analysis', concepts: ['SLE = Asset Value * Exposure Factor', 'ALE = SLE * ARO', 'Qualitative vs Quantitative Risk'] },
+            { day: 6, domain: 'Domain 1', phase: 'Giai Đoạn 1', title: 'Threat Modeling & Risk Response Strategies', concepts: ['Risk Mitigation, Avoidance, Transfer, Acceptance', 'STRIDE Threat Model'] },
+            { day: 7, domain: 'Domain 1', phase: 'Giai Đoạn 1', title: 'Ôn tập Tuần 1 & Tổng hợp 10 câu hỏi Domain 1', concepts: ['Review week 1 concepts', 'Managerial mindset consolidation'] },
+            
+            { day: 8, domain: 'Domain 2', phase: 'Giai Đoạn 1', title: 'Information & Asset Classification', concepts: ['Data Classification (Top Secret, Secret, Public)', 'Commercial vs Government Labels'] },
+            { day: 9, domain: 'Domain 2', phase: 'Giai Đoạn 1', title: 'Data Ownership Roles & Responsibilities', concepts: ['Data Owner vs System Owner vs Data Custodian', 'Data Controller & Processor'] },
+            { day: 10, domain: 'Domain 2', phase: 'Giai Đoạn 1', title: 'Data Lifecycle & Retention Policies', concepts: ['Data creation, storage, use, sharing, archiving, destruction'] },
+            { day: 11, domain: 'Domain 2', phase: 'Giai Đoạn 1', title: 'Data Security Controls (In-Transit, At-Rest, In-Use)', concepts: ['DLP (Data Loss Prevention)', 'Encryption controls', 'RAM/Register security'] },
+            { day: 12, domain: 'Domain 2', phase: 'Giai Đoạn 1', title: 'Asset Destruction & Media Sanitization', concepts: ['Degaussing, Purging, Clearing, Destruction', 'Overwriting standards'] },
+            { day: 13, domain: 'Domain 2', phase: 'Giai Đoạn 1', title: 'Ôn tập Tuần 2 & Tổng hợp 10 câu hỏi Domain 2', concepts: ['Review Asset Security', 'Media handling drills'] },
+            { day: 14, domain: 'Domain 1 & 2', phase: 'Giai Đoạn 1', title: 'Tổng ôn Giai đoạn 1 (Domain 1 & 2)', concepts: ['100 câu hỏi tổng hợp', 'Risk Advisor mindset test'] },
+
+            // Phase 2
+            { day: 22, domain: 'Domain 3', phase: 'Giai Đoạn 2', title: 'Security Architecture & Bell-LaPadula / Biba Models', concepts: ['No Read Up, No Write Down (BLP)', 'No Read Down, No Write Up (Biba)'] },
+            { day: 29, domain: 'Domain 4', phase: 'Giai Đoạn 2', title: 'OSI Model & Secure Network Protocols', concepts: ['IPsec (AH vs ESP), TLS 1.3, SSH', 'Network Segmentation & Firewalls'] },
+            { day: 36, domain: 'Domain 5', phase: 'Giai Đoạn 2', title: 'Identity & Access Management (IAM)', concepts: ['Authentication vs Authorization', 'SAML, OAuth 2.0, OIDC, RBAC, ABAC'] },
+
+            // Phase 3
+            { day: 50, domain: 'Domain 6', phase: 'Giai Đoạn 3', title: 'Security Assessment & Vulnerability Testing', concepts: ['SAST vs DAST vs Fuzzing', 'Vulnerability scanning vs Pentesting'] },
+            { day: 57, domain: 'Domain 7', phase: 'Giai Đoạn 3', title: 'Security Operations & Incident Response', concepts: ['Incident Response Life Cycle', 'Digital Forensics & Evidence chain'] },
+            { day: 64, domain: 'Domain 8', phase: 'Giai Đoạn 3', title: 'Software Development Security & SDLC', concepts: ['OWASP Top 10', 'API Security & Secure Coding'] },
+
+            // Phase 4
+            { day: 71, domain: 'Full Exam', phase: 'Giai Đoạn 4', title: 'Tổng ôn & Thi thử Mô phỏng CAT (Full Length)', concepts: ['125-175 câu thi thử', 'Phân tích lỗ hổng kiến thức'] },
+            { day: 84, domain: 'Full Exam', phase: 'Giai Đoạn 4', title: 'Sẵn sàng bước vào kỳ thi CISSP Official!', concepts: ['Nghỉ ngơi, sẵn sàng tâm lý', 'Chiến lược phân bổ thời gian thi'] }
+        ];
+
+        const sampleDay1Quiz = [
+            {
+                q: "Mục tiêu chính của Quản trị An toàn Thông tin (Information Security Governance) trong một tổ chức là gì?",
+                options: [
+                    "Triển khai các công cụ tường lửa và IDS tiên tiến nhất.",
+                    "Đảm bảo các chiến lược an ninh thông tin phù hợp và hỗ trợ các mục tiêu kinh doanh của tổ chức.",
+                    "Đạt được chứng nhận ISO 27001 trong thời gian ngắn nhất.",
+                    "Tự động hóa toàn bộ quá trình xử lý sự cố an ninh mạng."
+                ],
+                correct: 1,
+                explanation: "Quản trị an ninh (Governance) không phải là về công cụ hay kỹ thuật mà là việc căn chỉnh (align) an ninh thông tin với mục tiêu kinh doanh của tổ chức."
+            },
+            {
+                q: "Khi xảy ra sự xung đột giữa Mục tiêu An ninh Thông tin và Mục tiêu Kinh doanh chiến lược của công ty, trách nhiệm của Chuyên gia An ninh là gì?",
+                options: [
+                    "Áp đặt chính sách an ninh tuyệt đối bất chấp hoạt động kinh doanh.",
+                    "Bỏ qua các rủi ro an ninh để đảm bảo lợi nhuận kinh doanh.",
+                    "Đánh giá rủi ro và tư vấn cho Ban giám đốc (Management) để họ đưa ra quyết định kinh doanh có cân nhắc rủi ro.",
+                    "Chuyển nhượng toàn bộ trách nhiệm an ninh cho bộ phận CNTT."
+                ],
+                correct: 2,
+                explanation: "Think like a Manager - Chuyên gia an ninh đóng vai trò cố vấn rủi ro (Risk Advisor) cho Ban giám đốc ra quyết định."
+            }
+        ];
+
+        let currentDayIndex = 1;
+        let completedDays = JSON.parse(localStorage.getItem('cissp_completed_days') || '[]');
+        let streakCount = parseInt(localStorage.getItem('cissp_streak') || '1');
+        let currentQuiz = [...sampleDay1Quiz];
+        let currentQIndex = 0;
+        let quizAnswers = {};
+
+        // Timer
+        let timerInterval = null;
+        let timerSeconds = 120 * 60;
+        let isTimerRunning = false;
+        let audioCtx = null;
+
+        window.onload = function() {
+            initDayList();
+            loadDayDetails(1);
+            updateProgressStats();
+            checkNotificationSchedule();
+
+            setInterval(checkNotificationSchedule, 30000);
+            
+            const savedCode = localStorage.getItem('cissp_cloud_sync_code');
+            if(savedCode && document.getElementById('cloudSyncCodeInput')) {
+                document.getElementById('cloudSyncCodeInput').value = savedCode;
+            }
+            
+            const notifCheck = document.getElementById('notificationToggle');
+            if(notifCheck) notifCheck.checked = (Notification.permission === 'granted');
+        };
+
+        function initDayList(filterDomain = 'ALL') {
+            const container = document.getElementById('daysListContainer');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            // Generate full 84 days dynamically if missing in array
+            const fullList = [];
+            for(let i=1; i<=84; i++) {
+                let dbDay = cisspDatabase.find(d => d.day === i);
+                if (dbDay) fullList.push(dbDay);
+                else {
+                    let inferredDomain = `Domain ${Math.ceil(i/10) > 8 ? 8 : Math.ceil(i/10)}`;
+                    if (i > 70) inferredDomain = 'Full Exam';
+                    fullList.push({
+                        day: i,
+                        domain: inferredDomain,
+                        phase: i < 22 ? 'Giai Đoạn 1' : (i < 50 ? 'Giai Đoạn 2' : (i < 71 ? 'Giai Đoạn 3' : 'Giai Đoạn 4')),
+                        title: `Tự Học & Luyện Tập Ngày ${i}`,
+                        concepts: ['Đọc OSG', 'Giải 10 câu Practice']
+                    });
+                }
+            }
+
+            fullList.forEach(d => {
+                if (filterDomain !== 'ALL' && d.domain !== filterDomain) return;
+                
+                const isDone = completedDays.includes(d.day);
+                const isCurrent = currentDayIndex === d.day;
+                
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left p-3 rounded-xl border transition flex items-center justify-between mb-2 ${isCurrent ? 'bg-cissp-600/20 border-cissp-500 text-white shadow-[0_0_15px_-3px_rgba(2,132,199,0.3)]' : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'}`;
+                btn.onclick = () => loadDayDetails(d.day);
+                
+                btn.innerHTML = `
+                    <div>
+                        <div class="text-[10px] font-bold ${isCurrent ? 'text-cyan-400' : 'text-slate-500'} uppercase tracking-wider mb-0.5">Ngày ${d.day} • ${d.domain}</div>
+                        <div class="text-sm font-medium truncate max-w-[200px] sm:max-w-[250px] leading-tight">${d.title}</div>
+                    </div>
+                    ${isDone ? '<div class="w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30"><svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>' : ''}
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function switchTab(tab) {
+            ['tabDetailContent', 'tabQuizContent', 'tabAiContent'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            
+            const btnDeactive = "flex-1 py-2.5 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 bg-slate-800 text-slate-400 hover:text-slate-200 border border-transparent";
+            document.getElementById('tabDetailBtn').className = btnDeactive;
+            document.getElementById('tabQuizBtn').className = btnDeactive;
+            document.getElementById('tabAiBtn').className = btnDeactive;
+
+            if (tab === 'detail') {
+                document.getElementById('tabDetailContent').classList.remove('hidden');
+                document.getElementById('tabDetailBtn').className = "flex-1 py-2.5 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 bg-gradient-to-r from-cissp-600 to-cissp-500 text-white shadow-md shadow-cissp-600/20";
+            } else if (tab === 'quiz') {
+                document.getElementById('tabQuizContent').classList.remove('hidden');
+                document.getElementById('tabQuizBtn').className = "flex-1 py-2.5 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 bg-gradient-to-r from-slate-700 to-slate-600 text-white shadow-md";
+            } else if (tab === 'ai') {
+                document.getElementById('tabAiContent').classList.remove('hidden');
+                document.getElementById('tabAiBtn').className = "flex-1 py-2.5 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow-md shadow-amber-600/20";
+            }
+        }
+
+        function updateProgressStats() {
+            const percent = ((completedDays.length / 84) * 100).toFixed(1);
+            document.getElementById('progressPercent').innerText = `${percent}% (${completedDays.length}/84 Ngày)`;
+            document.getElementById('progressBar').style.width = `${percent}%`;
+            document.getElementById('streakDisplay').innerText = `${streakCount} Ngày Streak`;
+        }
+
+        window.updateCloudSyncStatusBadge = function(isConnected, textVal) {
+            const badge = document.getElementById('cloudSyncBadge');
+            const dot = document.getElementById('syncDot');
+            const text = document.getElementById('syncText');
+            const statusText = document.getElementById('cloudStatusText');
+
+            if (isConnected) {
+                badge.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold cursor-pointer transition";
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                text.innerText = `Sync: ${textVal}`;
+                if(statusText) {
+                    statusText.innerText = "Đã Kết Nối";
+                    statusText.className = "text-[10px] text-emerald-400 font-mono font-bold uppercase tracking-wider";
+                }
+            } else {
+                badge.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-xs font-semibold cursor-pointer transition";
+                dot.className = "w-2 h-2 rounded-full bg-slate-500";
+                text.innerText = textVal;
+                if(statusText) {
+                    statusText.innerText = "Chưa Kết Nối";
+                    statusText.className = "text-[10px] text-slate-500 font-mono uppercase tracking-wider";
+                }
+            }
+        };
+
+        window.applyCloudSyncCode = function() {
+            const newCode = document.getElementById('cloudSyncCodeInput').value.trim();
+            if (!newCode) return showToast("Vui lòng nhập một mã hợp lệ!");
+
+            localStorage.setItem('cissp_cloud_sync_code', newCode);
+            showToast(`Đã áp dụng mã đồng bộ mới: ${newCode}`);
+
+            if (typeof window.setupCloudSync === 'function') {
+                window.setupCloudSync();
+            }
+        };
+
+        function loadDayDetails(dayNum) {
+            currentDayIndex = dayNum;
+            const data = cisspDatabase.find(d => d.day === dayNum) || {
+                day: dayNum,
+                domain: `Domain ${Math.ceil(dayNum/10)}`,
+                phase: 'Lịch Học CISSP',
+                title: `Tự Học & Luyện Tập Ngày ${dayNum}`,
+                concepts: ['Đọc OSG', 'Luyện Drill', 'Phân tích Managerial Mindset']
+            };
+
+            document.getElementById('currentDayTitle').innerText = `Ngày ${dayNum} / 84`;
+            document.getElementById('currentTopicText').innerText = data.title;
+            document.getElementById('currentPhaseTag').innerText = data.phase;
+            document.getElementById('currentDomainTag').innerText = data.domain;
+
+            document.getElementById('detailDomainHeader').innerText = `${data.domain.toUpperCase()}: ${data.phase.toUpperCase()}`;
+            document.getElementById('detailTopicHeader').innerText = data.title;
+            
+            const conceptsUl = document.getElementById('keyConceptsList');
+            conceptsUl.innerHTML = '';
+            data.concepts.forEach(c => {
+                const li = document.createElement('li');
+                li.innerText = c;
+                conceptsUl.appendChild(li);
+            });
+
+            const isDone = completedDays.includes(dayNum);
+            const completeBtn = document.getElementById('markCompleteBtn');
+            const completeBtnText = document.getElementById('completeBtnText');
+            if (isDone) {
+                completeBtn.className = "flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-semibold text-sm transition shadow-lg shadow-emerald-500/10";
+                completeBtnText.innerText = "Đã Hoàn Thành ✓";
+            } else {
+                completeBtn.className = "flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition";
+                completeBtnText.innerText = "Đánh Dấu Hoàn Thành";
+            }
+
+            document.getElementById('quizDayHeader').innerText = `DRILL NGÀY ${dayNum}`;
+            quizAnswers = {};
+            currentQIndex = 0;
+            renderQuizQuestion();
+
+            initDayList(document.getElementById('domainFilter').value);
+        }
+
+        function toggleCompleteCurrentDay() {
+            if (completedDays.includes(currentDayIndex)) {
+                completedDays = completedDays.filter(d => d !== currentDayIndex);
+                showToast(`Đã bỏ đánh dấu Ngày ${currentDayIndex}`);
+            } else {
+                completedDays.push(currentDayIndex);
+                streakCount++;
+                localStorage.setItem('cissp_streak', streakCount.toString());
+                showToast(`Chúc mừng! Đã hoàn thành Ngày ${currentDayIndex} 🎉`);
+                playChimeSound();
+            }
+
+            localStorage.setItem('cissp_completed_days', JSON.stringify(completedDays));
+            updateProgressStats();
+            loadDayDetails(currentDayIndex);
+
+            if (typeof window.saveProgressToCloud === 'function') {
+                window.saveProgressToCloud();
+            }
+        }
+
+        function renderQuizQuestion() {
+            const q = currentQuiz[currentQIndex];
+            if (!q) return;
+
+            document.getElementById('qNumberTag').innerText = `Q${currentQIndex + 1}`;
+            document.getElementById('qQuestionText').innerText = q.q;
+            document.getElementById('quizIndexIndicator').innerText = `${currentQIndex + 1} / ${currentQuiz.length}`;
+            document.getElementById('quizProgressBar').style.width = `${((currentQIndex + 1) / currentQuiz.length) * 100}%`;
+
+            const optionsContainer = document.getElementById('qOptionsContainer');
+            optionsContainer.innerHTML = '';
+            const selectedAns = quizAnswers[currentQIndex];
+
+            q.options.forEach((optText, idx) => {
+                const optBtn = document.createElement('button');
+                optBtn.className = "w-full p-3.5 rounded-xl border text-left text-[13px] font-medium transition flex items-start gap-3 ";
+
+                if (selectedAns !== undefined) {
+                    if (idx === q.correct) {
+                        optBtn.className += "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 font-bold shadow-[0_0_15px_-3px_rgba(16,185,129,0.3)]";
+                    } else if (selectedAns === idx) {
+                        optBtn.className += "bg-rose-500/20 border-rose-500/50 text-rose-300";
+                    } else {
+                        optBtn.className += "bg-slate-950/40 border-slate-800 text-slate-500 opacity-60";
+                    }
+                } else {
+                    optBtn.className += "bg-slate-950 border-slate-800 hover:border-cissp-500 text-slate-200 hover:bg-slate-800/80";
+                    optBtn.onclick = () => selectQuizAnswer(idx);
+                }
+
+                optBtn.innerHTML = `
+                    <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center font-mono text-[11px] font-bold shrink-0 border border-slate-700">${String.fromCharCode(65 + idx)}</span>
+                    <span class="leading-relaxed mt-0.5">${optText}</span>
+                `;
+                optionsContainer.appendChild(optBtn);
+            });
+
+            const explanationBox = document.getElementById('qExplanationBox');
+            if (selectedAns !== undefined) {
+                explanationBox.classList.remove('hidden');
+                document.getElementById('qExplanationText').innerText = q.explanation || "Luôn ưu tiên tư duy quản lý, đánh giá rủi ro (Risk Assessment) trước khi thay đổi kỹ thuật.";
+            } else {
+                explanationBox.classList.add('hidden');
+            }
+
+            document.getElementById('prevQBtn').disabled = currentQIndex === 0;
+            document.getElementById('nextQBtn').disabled = currentQIndex === currentQuiz.length - 1;
+
+            let correctCount = 0;
+            Object.keys(quizAnswers).forEach(k => {
+                if (quizAnswers[k] === currentQuiz[k].correct) correctCount++;
+            });
+            document.getElementById('quizScoreText').innerText = correctCount;
+            document.getElementById('quizTotalText').innerText = currentQuiz.length;
+        }
+
+        function selectQuizAnswer(optIdx) {
+            quizAnswers[currentQIndex] = optIdx;
+            renderQuizQuestion();
+        }
+
+        function navigateQuiz(dir) {
+            currentQIndex += dir;
+            if (currentQIndex < 0) currentQIndex = 0;
+            if (currentQIndex >= currentQuiz.length) currentQIndex = currentQuiz.length - 1;
+            renderQuizQuestion();
+        }
+
+        async function generateAiQuiz() {
+            const statusBox = document.getElementById('aiStatusBox');
+            statusBox.classList.remove('hidden');
+            statusBox.innerHTML = '<span class="animate-pulse">🤖 Gemini AI đang đọc dữ liệu Ngày ' + currentDayIndex + ' và sinh 10 câu hỏi chuẩn CISSP...</span>';
+
+            const dayData = cisspDatabase.find(d => d.day === currentDayIndex) || { title: `Practice Day ${currentDayIndex}`, domain: 'Domain 1' };
+            const style = document.getElementById('aiStyleSelect').value;
+
+            const prompt = `Bạn là Giám đốc khảo thí ra đề thi CISSP cấp cao của ISC2.
+Hãy tạo đúng 5 câu hỏi trắc nghiệm tiếng Việt tình huống thực tế cho người luyện thi CISSP về chủ đề: "${dayData.title}" (${dayData.domain}).
+Phong cách: ${style}. 
+Mục tiêu là kiểm tra 'Managerial Mindset' (Tư duy quản lý rủi ro và hoạt động kinh doanh).
+
+TRẢ VỀ DUY NHẤT ĐỊNH DẠNG JSON MẢNG (ARRAY), không có bất kỳ text nào khác ngoài JSON:
+[
+  {
+    "q": "Câu hỏi tình huống...",
+    "options": ["A...", "B...", "C...", "D..."],
+    "correct": 0,
+    "explanation": "Giải thích chi tiết theo tư duy CISO..."
+  }
+]`;
+
+            try {
+                const apiKey = "AQ.Ab8RN6I5m3YZiIZI6D61U1x-5ORjAO7GeQgPYVj6oXXI6jbvNw"; // API Key will be injected via Canvas
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+
+                const result = await response.json();
+                const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    const parsedQuiz = JSON.parse(jsonText);
+                    currentQuiz = parsedQuiz;
+                    quizAnswers = {};
+                    currentQIndex = 0;
+
+                    showToast("Đã tạo xong bộ đề thi thử mới thành công!");
+                    statusBox.classList.add('hidden');
+                    switchTab('quiz');
+                    renderQuizQuestion();
+                } else {
+                    throw new Error("Invalid format");
+                }
+            } catch (err) {
+                console.error(err);
+                statusBox.innerHTML = "Lỗi khi kết nối Gemini API. Vui lòng thử lại!";
+            }
+        }
+
+        function playChimeSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.6);
+            } catch (e) {}
+        }
+
+        function checkNotificationSchedule() {
+            const savedTime = localStorage.getItem('cissp_reminder_time') || "20:00";
+            const now = new Date();
+            const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            if (currentTimeStr === savedTime && now.getSeconds() < 30) {
+                playChimeSound();
+                showToast("🔔 Đã đến giờ học CISSP hôm nay! Hãy giữ vững kỷ luật.");
+                if (Notification.permission === 'granted') {
+                    new Notification("CISSP Daily Reminder 🎯", {
+                        body: `Hôm nay là Ngày ${currentDayIndex}: Đến giờ học rồi sếp ơi!`,
+                    });
+                }
+            }
+        }
+
+        function openTimerModal() { document.getElementById('timerModal').classList.remove('hidden'); }
+        function closeTimerModal() { document.getElementById('timerModal').classList.add('hidden'); }
+
+        function setTimerSegment(minutes, tagText, subtext) {
+            timerSeconds = minutes * 60;
+            document.getElementById('timerSegmentTag').innerText = tagText;
+            document.getElementById('timerSubtext').innerText = subtext;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const h = Math.floor(timerSeconds / 3600);
+            const m = Math.floor((timerSeconds % 3600) / 60);
+            const s = timerSeconds % 60;
+            document.getElementById('timerDigits').innerText = 
+                `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('startTimerBtn');
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                btn.innerText = "Tiếp Tục";
+                btn.className = "flex-1 py-3 rounded-xl bg-cissp-600 hover:bg-cissp-500 text-white font-bold text-sm shadow-lg transition";
+            } else {
+                isTimerRunning = true;
+                btn.innerText = "Tạm Dừng";
+                btn.className = "flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg transition";
+
+                timerInterval = setInterval(() => {
+                    if (timerSeconds > 0) {
+                        timerSeconds--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isTimerRunning = false;
+                        playChimeSound();
+                        showToast("🎉 Hết giờ! Thời gian học đã kết thúc.");
+                        btn.innerText = "Bắt Đầu";
+                        btn.className = "flex-1 py-3 rounded-xl bg-cissp-600 hover:bg-cissp-500 text-white font-bold text-sm shadow-lg transition";
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timerSeconds = 120 * 60;
+            updateTimerDisplay();
+            const btn = document.getElementById('startTimerBtn');
+            btn.innerText = "Bắt Đầu";
+            btn.className = "flex-1 py-3 rounded-xl bg-cissp-600 hover:bg-cissp-500 text-white font-bold text-sm shadow-lg transition";
+        }
+
+        function toggleReminderModal() {
+            document.getElementById('reminderModal').classList.toggle('hidden');
+        }
+
+        function saveReminderSettings() {
+            const timeVal = document.getElementById('reminderTimeInput').value;
+            localStorage.setItem('cissp_reminder_time', timeVal);
+
+            const notifToggle = document.getElementById('notificationToggle').checked;
+            if (notifToggle && Notification.permission !== 'granted') {
+                Notification.requestPermission().then(perm => {
+                    if (perm === 'granted') showToast("Đã kích hoạt thông báo Push Notification!");
+                });
+            }
+
+            document.getElementById('reminderBadge').classList.remove('hidden');
+            toggleReminderModal();
+            showToast(`Cài đặt thành công! Thông báo vào ${timeVal} mỗi ngày.`);
+        }
+
+        function exportUserData() {
+            const backupData = {
+                completedDays: completedDays,
+                streak: streakCount,
+                reminderTime: localStorage.getItem('cissp_reminder_time') || "20:00"
+            };
+            const jsonString = JSON.stringify(backupData);
+            
+            const tempInput = document.createElement('textarea');
+            tempInput.value = jsonString;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast("✅ Đã copy JSON Sao lưu vào Clipboard! Gửi mã này sang máy khác để Nhập.");
+        }
+
+        function importUserData() {
+            const inputCode = prompt("Dán mã JSON sao lưu của ông vào đây:");
+            if (!inputCode) return;
+
+            try {
+                const parsed = JSON.parse(inputCode);
+                if (Array.isArray(parsed.completedDays)) {
+                    completedDays = parsed.completedDays;
+                    localStorage.setItem('cissp_completed_days', JSON.stringify(completedDays));
+                }
+                if (parsed.streak) {
+                    streakCount = parseInt(parsed.streak);
+                    localStorage.setItem('cissp_streak', streakCount.toString());
+                }
+                if (parsed.reminderTime) {
+                    localStorage.setItem('cissp_reminder_time', parsed.reminderTime);
+                    document.getElementById('reminderTimeInput').value = parsed.reminderTime;
+                }
+
+                updateProgressStats();
+                loadDayDetails(currentDayIndex);
+                showToast("Khôi phục tiến độ thành công! 🎉");
+                
+                if (typeof window.saveProgressToCloud === 'function') {
+                    window.saveProgressToCloud(); // Push newly imported data up to cloud
+                }
+            } catch (e) {
+                alert("Mã sao lưu không hợp lệ. Vui lòng kiểm tra lại cấu trúc JSON!");
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastText').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+
+        function copyDayToNotebookLM() {
+            const data = cisspDatabase.find(d => d.day === currentDayIndex) || { title: `Day ${currentDayIndex}`, concepts: [] };
+            const textToCopy = `=== CISSP STUDY PLAN - DAY ${currentDayIndex} ===\nTitle: ${data.title}\nDomain: ${data.domain}\nPhase: ${data.phase}\n\nCore Concepts:\n${data.concepts.map(c => '- ' + c).join('\n')}\n\nDaily Schedule (2 Hours):\n- 60 Mins: Theory Reading (OSG / Video)\n- 30 Mins: 10 Practice Questions Drill\n- 30 Mins: Answer Review & Manager Mindset Analysis\n`;
+            
+            const tempInput = document.createElement('textarea');
+            tempInput.value = textToCopy;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            
+            showToast("📝 Đã copy tóm tắt vào Clipboard! (Dán vào NotebookLM ngay)");
+        }
+    </script>
+</body>
+</html>
