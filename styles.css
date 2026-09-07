@@ -1,30 +1,36 @@
+/* Base page colors and typography. */
 body {
     font-family: Inter, system-ui, sans-serif;
     background: #080d16;
     color: #e2e8f0;
 }
 
+/* Shared translucent panel style used throughout the dashboard. */
 .glass {
     background: rgba(15, 23, 42, .82);
     backdrop-filter: blur(12px);
     border: 1px solid #1e293b;
 }
 
+/* Visual feedback while hovering over an answer choice. */
 .choice:hover {
     border-color: #22d3ee;
     background: #083344;
 }
 
+/* Visual state for the correct answer after submission. */
 .correct {
     border-color: #10b981 !important;
     background: #064e3b !important;
 }
 
+/* Visual state for the selected incorrect answer. */
 .wrong {
     border-color: #f43f5e !important;
     background: #7f1d1d !important;
 }
 
+/* Utility class used to hide inactive application views. */
 .hidden {
     display: none !important;
 }

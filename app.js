@@ -1,3 +1,4 @@
+// Maps numeric CISSP domains to the labels shown in the analytics view.
 const DOM = {
   1: 'D1 — Security and Risk Management',
   2: 'D2 — Asset Security',
@@ -9,6 +10,7 @@ const DOM = {
   8: 'D8 — Software Development Security'
 };
 
+// Reads a JSON value from localStorage and safely falls back to an empty list.
 const G = (key) => {
   try {
     const parsed = JSON.parse(localStorage.getItem(key) || '[]');
@@ -18,22 +20,124 @@ const G = (key) => {
   }
 };
 
+// Persists application state as JSON in the browser.
 const S = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 
+// Restores the last selected study day, defaulting to day one for new users.
 function getSavedDay() {
   const raw = localStorage.getItem('c_day');
   const n = Number(raw ?? 1);
   return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
+// Runtime state for the selected day, daily quiz, and exam session.
 let day = getSavedDay();
 let qstate = {};
 let exam = null;
+let questionsReady = false;
+let questionLoadError = '';
 
+// Retrieves the user-provided Gemini key from this browser only.
+function getGeminiKey() {
+  return localStorage.getItem('gemini_api_key') || '';
+}
+
+// Saves or removes the Gemini key entered in the header form.
+function saveGeminiKey() {
+  const key = document.getElementById('geminiKey').value.trim();
+  if (!key) {
+    localStorage.removeItem('gemini_api_key');
+    alert('Đã xóa Gemini API key khỏi trình duyệt.');
+    return;
+  }
+  localStorage.setItem('gemini_api_key', key);
+  alert('Đã lưu Gemini API key trên trình duyệt này.');
+}
+
+// Calls Gemini directly from the GitHub Pages client and normalizes its response.
+async function fetchGeminiQuestions({ count, domain = 0, dayNumber = 0 }) {
+  const key = getGeminiKey();
+  if (!key) throw new Error('Hãy nhập và lưu Gemini API key trước.');
+
+  // Restrict the generated questions to the selected study scope.
+  const scope = dayNumber
+    ? `Focus on CISSP study day ${dayNumber}.`
+    : domain
+      ? `Focus on CISSP domain ${domain}.`
+      : 'Cover CISSP domains broadly.';
+  // Request JSON so the client can render questions without extra parsing rules.
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${encodeURIComponent(key)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Generate exactly ${count} high-difficulty, original CISSP practice questions. ${scope}
+Use complex workplace scenarios requiring risk prioritization, governance, architecture trade-offs, business context, and the CISSP "BEST/MOST appropriate" mindset.
+Make the distractors technically plausible and close to the correct answer, but ensure only one option is clearly best for the stated context.
+Avoid recall-only questions, obvious options, duplicate wording, and repeated scenarios. Each question must have exactly four plausible options and one best answer.
+Return only valid JSON with this shape:
+{"questions":[{"q":"...","options":["...","...","...","..."],"correct":0,"explanation":"...","topic":"...","domain":${domain || 0},"day":${dayNumber || 0}}]}
+The correct field is a zero-based option index.`
+          }]
+        }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.8 }
+      })
+    }
+  );
+
+  // Convert Gemini HTTP failures into a readable message for the user.
+  if (!response.ok) {
+    let message = `Gemini request failed (${response.status}).`;
+    try {
+      const body = await response.json();
+      if (body.error?.message) message = body.error.message;
+    } catch {
+      // Keep the HTTP status when Gemini does not return JSON.
+    }
+    throw new Error(message);
+  }
+
+  // Extract the model's structured response from the Gemini envelope.
+  const payload = await response.json();
+  const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error('Gemini returned no questions.');
+  }
+
+  // Parse the model output and reject malformed responses explicitly.
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error('Gemini returned invalid JSON. Please try again.');
+  }
+  if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) {
+    throw new Error('Gemini returned no questions.');
+  }
+  return uniqueQuestions(parsed.questions);
+}
+
+// Renders a consistent error panel when Gemini cannot provide a question set.
+function showQuestionError(container, error) {
+  questionLoadError = error instanceof Error ? error.message : String(error);
+  container.innerHTML = `
+    <div class="rounded-lg border border-rose-800 bg-rose-950/40 p-4 text-rose-200">
+      <b>Không tải được câu hỏi từ Gemini.</b>
+      <div class="mt-2 text-sm">${questionLoadError}</div>
+      <div class="mt-2 text-xs text-slate-300">Hãy nhập Gemini API key ở phía trên rồi thử lại.</div>
+    </div>
+  `;
+}
+
+// Returns the metadata for the currently selected day.
 function cur() {
   return DAYS.find(x => x.day === day) || DAYS[0];
 }
 
+// Fisher-Yates shuffle used to make answer positions unpredictable.
 function shuffle(items) {
   const arr = [...items];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -43,6 +147,7 @@ function shuffle(items) {
   return arr;
 }
 
+// Creates a shuffled display copy while preserving the original correct index.
 function buildDisplayQuestion(question) {
   const originalIndices = question.options.map((_, idx) => idx);
   const order = shuffle(originalIndices);
@@ -53,6 +158,30 @@ function buildDisplayQuestion(question) {
   };
 }
 
+// Creates a stable, case-insensitive key for duplicate-question detection.
+function normalizeQuestionKey(question) {
+  return (question && question.q ? question.q : '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+// Removes duplicate or empty generated questions before they enter a quiz.
+function uniqueQuestions(items) {
+  const seen = new Set();
+  const result = [];
+
+  for (const item of items) {
+    const key = normalizeQuestionKey(item);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+
+  return result;
+}
+
+// Renders the searchable day list and highlights the active day.
 function renderDays() {
   const q = search.value.toLowerCase();
   const f = +df.value;
@@ -67,6 +196,7 @@ function renderDays() {
     .join('');
 }
 
+// Changes the active study day and refreshes dependent views.
 function sel(n) {
   day = n;
   S('c_day', n);
@@ -75,6 +205,7 @@ function sel(n) {
   renderQuiz();
 }
 
+// Populates the study panel using static metadata from data.js.
 function renderStudy() {
   const x = cur();
   document.getElementById('day').textContent = `DAY ${x.day} / 84 • DOMAIN ${x.domain}`;
@@ -87,6 +218,7 @@ function renderStudy() {
   scenario.textContent = x.scenario;
 }
 
+// Switches between the five main application views.
 function show(n) {
   ['study', 'quiz', 'exam', 'review', 'stats'].forEach(x => {
     document.getElementById(x).classList.toggle('hidden', x !== n);
@@ -97,6 +229,7 @@ function show(n) {
   if (n === 'stats') renderStats();
 }
 
+// Marks the active study day complete and updates progress metrics.
 function complete() {
   const done = G('c_done');
   if (!done.includes(day)) done.push(day);
@@ -106,13 +239,23 @@ function complete() {
   alert('Đã hoàn thành Day ' + day);
 }
 
-function renderQuiz() {
+// Starts a new Gemini-generated five-question daily quiz.
+async function renderQuiz() {
   qstate = { i: 0, score: 0, answered: null, shown: null };
-  renderQ();
+  qbox.innerHTML = '<div class="text-slate-400">Đang tạo câu hỏi bằng Gemini...</div>';
+  try {
+    qstate.questions = await fetchGeminiQuestions({ count: 10, domain: cur().domain, dayNumber: day });
+    questionsReady = true;
+    renderQ();
+  } catch (error) {
+    questionsReady = false;
+    showQuestionError(qbox, error);
+  }
 }
 
+// Draws the current daily quiz question and its answer choices.
 function renderQ() {
-  const qs = cur().questions;
+  const qs = qstate.questions || [];
 
   if (qstate.i >= qs.length) {
     qbox.innerHTML = `
@@ -128,7 +271,7 @@ function renderQ() {
   const q = qs[qstate.i];
   const shown = buildDisplayQuestion(q);
   qstate.shown = shown;
-  qmeta.textContent = `Q ${qstate.i + 1}/5 • Score ${qstate.score}`;
+  qmeta.textContent = `Q ${qstate.i + 1}/${qs.length} • Score ${qstate.score}`;
 
   qbox.innerHTML = `
     <div class="text-lg font-bold">${q.q}</div>
@@ -144,6 +287,7 @@ function renderQ() {
   `;
 }
 
+// Scores a daily answer, stores mistakes, and reveals the explanation.
 function ans(i) {
   if (qstate.answered !== null) return;
 
@@ -185,24 +329,31 @@ function ans(i) {
   stats();
 }
 
+// Advances the daily quiz to the next question.
 function nextQ() {
   qstate.i += 1;
   qstate.answered = null;
   renderQ();
 }
 
-function startExam() {
+// Requests a unique Gemini-generated exam and starts its timer.
+async function startExam() {
   const n = +ec.value;
   const mins = +em.value;
   const d = +ed.value;
+  ebox.classList.remove('hidden');
+  ebox.innerHTML = '<div class="text-slate-400">Đang tạo đề thi bằng Gemini...</div>';
 
-  const pool = DAYS.flatMap(x => x.questions.map(q => ({ ...q, day: x.day, domain: x.domain, topic: x.topic })))
-    .filter(x => !d || x.domain === d)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, n);
+  let pool;
+  try {
+    pool = await fetchGeminiQuestions({ count: n, domain: d });
+  } catch (error) {
+    showQuestionError(ebox, error);
+    return;
+  }
 
   exam = {
-    qs: pool,
+    qs: pool.slice(0, Math.min(n, pool.length)),
     i: 0,
     score: 0,
     ans: null,
@@ -212,11 +363,11 @@ function startExam() {
     timer: null
   };
 
-  ebox.classList.remove('hidden');
   exam.timer = setInterval(timer, 500);
   renderExam();
 }
 
+// Updates the visible exam countdown and ends an expired exam.
 function timer() {
   if (!exam) return;
 
@@ -228,6 +379,7 @@ function timer() {
   if (sec <= 0) finishExam();
 }
 
+// Draws the current timed-exam question.
 function renderExam() {
   if (!exam) return;
   if (exam.i >= exam.qs.length) return finishExam();
@@ -256,6 +408,7 @@ function renderExam() {
   timer();
 }
 
+// Scores an exam answer and highlights the correct choice.
 function ea(i) {
   if (exam.ans !== null) return;
 
@@ -275,12 +428,14 @@ function ea(i) {
   document.getElementById('en').disabled = false;
 }
 
+// Advances the timed exam to its next question.
 function nextExam() {
   exam.i += 1;
   exam.ans = null;
   renderExam();
 }
 
+// Stops the exam timer and displays the final score.
 function finishExam() {
   if (!exam || exam.done) return;
   exam.done = true;
@@ -296,6 +451,7 @@ function finishExam() {
   `;
 }
 
+// Displays the user's stored incorrect answers for review.
 function renderReview() {
   const x = G('c_wrong');
 
@@ -312,12 +468,14 @@ function renderReview() {
     : '<div class="text-slate-400">Chưa có câu sai.</div>';
 }
 
+// Clears all stored incorrect answers.
 function clearWrong() {
   localStorage.removeItem('c_wrong');
   renderReview();
   stats();
 }
 
+// Calculates the consecutive completed-day streak.
 function streak() {
   const x = [...new Set(G('c_done'))].sort((a, b) => a - b);
   let s = 0;
@@ -330,6 +488,7 @@ function streak() {
   return s;
 }
 
+// Refreshes the summary cards at the top of the dashboard.
 function stats() {
   const done = G('c_done');
   const aa = G('c_ans');
@@ -341,6 +500,7 @@ function stats() {
   w.textContent = ww.length;
 }
 
+// Builds per-domain completion and accuracy progress bars.
 function renderStats() {
   const aa = G('c_ans');
   const done = G('c_done');
@@ -365,6 +525,7 @@ function renderStats() {
   }).join('');
 }
 
+// Downloads progress and review data as a local JSON backup.
 function exportData() {
   const blob = new Blob([
     JSON.stringify({ done: G('c_done'), ans: G('c_ans'), wrong: G('c_wrong') }, null, 2)
@@ -376,6 +537,7 @@ function exportData() {
   a.click();
 }
 
+// Removes all local progress and reloads the application.
 function resetData() {
   if (confirm('Xóa toàn bộ dữ liệu học?')) {
     ['c_done', 'c_ans', 'c_wrong', 'c_day'].forEach(k => localStorage.removeItem(k));
@@ -383,6 +545,7 @@ function resetData() {
   }
 }
 
+// Exposes handlers required by the inline HTML onclick attributes.
 window.renderDays = renderDays;
 window.sel = sel;
 window.show = show;
@@ -404,9 +567,11 @@ window.stats = stats;
 window.renderStats = renderStats;
 window.exportData = exportData;
 window.resetData = resetData;
+window.saveGeminiKey = saveGeminiKey;
 
 renderDays();
 renderStudy();
 renderQuiz();
 stats();
 show('study');
+document.getElementById('geminiKey').value = getGeminiKey();

@@ -1,0 +1,2 @@
+# Never commit local credentials or environment overrides.
+.env
