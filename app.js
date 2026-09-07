@@ -36,6 +36,7 @@ let qstate = {};
 let exam = null;
 let questionsReady = false;
 let questionLoadError = '';
+let studyRequestId = 0;
 
 // Retrieves the user-provided Gemini key from this browser only.
 function getGeminiKey() {
@@ -118,6 +119,72 @@ The correct field is a zero-based option index.`
     throw new Error('Gemini returned no questions.');
   }
   return uniqueQuestions(parsed.questions);
+}
+
+// Generates a long, structured theory lesson for the selected day.
+async function fetchGeminiStudy(studyDay) {
+  const key = getGeminiKey();
+  if (!key) throw new Error('Hãy nhập và lưu Gemini API key trước.');
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${encodeURIComponent(key)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Create a long, advanced CISSP study lesson in English for day ${studyDay.day}.
+Topic: ${studyDay.topic}. Domain: ${studyDay.domain}.
+Write at least 900 words. Teach reasoning, not memorization. Include learning objectives,
+precise definitions, relationships and cause/effect, an enterprise scenario, risk/governance/
+business/architecture/control trade-offs, CISSP traps with explanations, a practical checklist,
+and five self-assessment questions.
+Return only valid JSON:
+{"title":"...","intro":"...","sections":[{"heading":"...","content":"..."}],"bullets":["..."],"traps":["..."],"mindset":"...","scenario":"..."}`
+          }]
+        }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.7 }
+      })
+    }
+  );
+
+  if (!response.ok) {
+    let message = `Gemini request failed (${response.status}).`;
+    try {
+      const body = await response.json();
+      if (body.error?.message) message = body.error.message;
+    } catch {
+      // Keep the HTTP status when Gemini does not return JSON.
+    }
+    throw new Error(message);
+  }
+
+  const payload = await response.json();
+  const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Gemini returned no study lesson.');
+
+  let lesson;
+  try {
+    lesson = JSON.parse(text);
+  } catch {
+    throw new Error('Gemini returned invalid study JSON. Please try again.');
+  }
+
+  if (
+    !lesson ||
+    typeof lesson.title !== 'string' ||
+    typeof lesson.intro !== 'string' ||
+    !Array.isArray(lesson.sections) ||
+    !Array.isArray(lesson.bullets) ||
+    !Array.isArray(lesson.traps) ||
+    typeof lesson.mindset !== 'string' ||
+    typeof lesson.scenario !== 'string'
+  ) {
+    throw new Error('Gemini returned an incomplete study lesson.');
+  }
+
+  return lesson;
 }
 
 // Renders a consistent error panel when Gemini cannot provide a question set.
@@ -205,17 +272,38 @@ function sel(n) {
   renderQuiz();
 }
 
-// Populates the study panel using static metadata from data.js.
+// Loads and renders a fresh, long Gemini lesson whenever the selected day changes.
 function renderStudy() {
   const x = cur();
   document.getElementById('day').textContent = `DAY ${x.day} / 84 • DOMAIN ${x.domain}`;
-  title.textContent = x.title;
   domain.textContent = DOM[x.domain];
-  intro.textContent = x.intro;
-  bullets.innerHTML = x.bullets.map(z => `<li>${z}</li>`).join('');
-  mindset.textContent = x.mindset;
-  traps.innerHTML = x.traps.map(z => `<li>${z}</li>`).join('');
-  scenario.textContent = x.scenario;
+  title.textContent = 'Đang tải lý thuyết chuyên sâu...';
+  intro.textContent = 'Gemini đang tạo bài học dài cho ngày này.';
+  bullets.innerHTML = '';
+  mindset.textContent = '';
+  traps.innerHTML = '';
+  scenario.textContent = '';
+  studySections.innerHTML = '';
+  const requestId = ++studyRequestId;
+
+  fetchGeminiStudy(x).then(lesson => {
+    if (requestId !== studyRequestId) return;
+    title.textContent = lesson.title;
+    intro.textContent = lesson.intro;
+    bullets.innerHTML = lesson.bullets.map(item => `<li>${item}</li>`).join('');
+    mindset.textContent = lesson.mindset;
+    traps.innerHTML = lesson.traps.map(item => `<li>${item}</li>`).join('');
+    scenario.textContent = lesson.scenario;
+    studySections.innerHTML = lesson.sections.map(section => `
+      <section class="mt-6">
+        <h3 class="text-xl font-bold text-cyan-300">${section.heading}</h3>
+        <div class="mt-2 leading-7 text-slate-300 whitespace-pre-line">${section.content}</div>
+      </section>
+    `).join('');
+  }).catch(error => {
+    if (requestId !== studyRequestId) return;
+    showQuestionError(document.getElementById('intro'), error);
+  });
 }
 
 // Switches between the five main application views.
