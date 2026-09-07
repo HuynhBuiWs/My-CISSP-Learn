@@ -334,42 +334,151 @@
             }
         }
 
-        async function autoGenerateEnglishQuiz() {
-            const apiKey = localStorage.getItem('cissp_gemini_api_key');
-            if (!apiKey) { alert('Vui lòng vào Cài đặt (🔔) dán Gemini API Key để sinh đề!'); return; }
+    ```javascript
+async function autoGenerateEnglishQuiz() {
+    const apiKey = localStorage.getItem('cissp_gemini_api_key');
 
-            const qText = document.getElementById('quizQuestionText');
-            const optsContainer = document.getElementById('quizOptionsContainer');
-            
-            document.getElementById('quizProgressText').innerText = "Đang tạo đề...";
-            qText.innerText = "⏳ Gemini 1.5 Pro đang phân tích bài học và sinh 10 câu hỏi Tiếng Anh...";
-            optsContainer.innerHTML = "";
-            document.getElementById('quizExplanationBox').classList.add('hidden');
+    if (!apiKey) {
+        alert('Vui lòng vào Cài đặt (🔔) dán Gemini API Key để sinh đề!');
+        return;
+    }
 
-            const dayData = studyPlan.find(d => d.day === selectedDay);
-            const prompt = `Generate 10 high-quality CISSP multiple-choice questions in ENGLISH about: "${dayData.title}". Emphasize the CISSP Managerial Mindset. Include 4 options (A, B, C, D) and a detailed explanation. Return ONLY a valid JSON array exactly like this: [{"q":"Question?","options":["A. opt","B. opt","C. opt","D. opt"],"correct":0,"explanation":"Explain"}]. Do not use markdown backticks.`;
+    const qText = document.getElementById('quizQuestionText');
+    const optsContainer = document.getElementById('quizOptionsContainer');
 
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
-                });
-                
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error?.message || "Lỗi API");
+    document.getElementById('quizProgressText').innerText = "Đang tạo đề...";
+    qText.innerText = "⏳ Gemini đang phân tích bài học và sinh 10 câu hỏi Tiếng Anh...";
+    optsContainer.innerHTML = "";
+    document.getElementById('quizExplanationBox').classList.add('hidden');
 
-                let rawText = data.candidates[0].content.parts[0].text;
-                rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-                
-                currentQuizData = JSON.parse(rawText);
-                loadedQuizForDay = selectedDay; 
-                renderQuizQuestion(0);
-            } catch (err) { 
-                qText.innerText = "❌ Lỗi sinh đề: " + err.message; 
-                console.error(err); 
+    const dayData = studyPlan.find(d => d.day === selectedDay);
+
+    if (!dayData) {
+        qText.innerText = "❌ Không tìm thấy dữ liệu bài học.";
+        return;
+    }
+
+    const prompt = `
+Generate 10 high-quality CISSP multiple-choice questions in ENGLISH about:
+"${dayData.title}"
+
+Requirements:
+- Emphasize the CISSP Managerial Mindset.
+- Each question must have exactly 4 options.
+- Options must be A, B, C, D.
+- Provide the correct answer as a zero-based index: 0, 1, 2, or 3.
+- Provide a detailed explanation.
+- Return ONLY a valid JSON array.
+- Do NOT use Markdown.
+- Do NOT wrap the JSON in code fences.
+
+Required format:
+[
+  {
+    "q": "Question?",
+    "options": [
+      "A. Option 1",
+      "B. Option 2",
+      "C. Option 3",
+      "D. Option 4"
+    ],
+    "correct": 0,
+    "explanation": "Detailed explanation"
+  }
+]
+`;
+
+    try {
+        // Dùng model Gemini hiện tại thay cho gemini-1.5-flash
+        const model = "gemini-2.5-flash";
+
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            parts: [
+                                {
+                                    text: prompt
+                                }
+                            ]
+                        }
+                    ],
+                    generationConfig: {
+                        temperature: 0.7,
+                        responseMimeType: "application/json"
+                    }
+                })
             }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error?.message ||
+                `Gemini API lỗi HTTP ${response.status}`
+            );
         }
+
+        const rawText =
+            data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!rawText) {
+            throw new Error("Gemini không trả về nội dung.");
+        }
+
+        let quizData;
+
+        try {
+            quizData = JSON.parse(rawText);
+        } catch (jsonError) {
+            console.error("Gemini raw response:", rawText);
+            throw new Error("Gemini trả về JSON không hợp lệ.");
+        }
+
+        if (!Array.isArray(quizData)) {
+            throw new Error("Dữ liệu quiz không phải JSON array.");
+        }
+
+        if (quizData.length === 0) {
+            throw new Error("Gemini không tạo được câu hỏi nào.");
+        }
+
+        // Kiểm tra dữ liệu trước khi render
+        quizData.forEach((item, index) => {
+            if (
+                !item.q ||
+                !Array.isArray(item.options) ||
+                item.options.length !== 4 ||
+                typeof item.correct !== "number" ||
+                item.correct < 0 ||
+                item.correct > 3 ||
+                !item.explanation
+            ) {
+                throw new Error(
+                    `Câu hỏi số ${index + 1} có định dạng không hợp lệ.`
+                );
+            }
+        });
+
+        currentQuizData = quizData;
+        loadedQuizForDay = selectedDay;
+
+        renderQuizQuestion(0);
+
+    } catch (err) {
+        qText.innerText = "❌ Lỗi sinh đề: " + err.message;
+        console.error("Gemini Quiz Error:", err);
+    }
+}
+
+
 
         function renderQuizQuestion(idx) {
             currentQuizIdx = idx; const q = currentQuizData[idx] || currentQuizData[0];
