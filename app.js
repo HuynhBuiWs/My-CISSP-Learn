@@ -23,6 +23,20 @@ const G = (key) => {
 // Persists application state as JSON in the browser.
 const S = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 
+// Reads a cached object for a specific study day.
+function getDayCache(prefix, dayNumber) {
+  try {
+    return JSON.parse(localStorage.getItem(`${prefix}_${dayNumber}`) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+// Stores generated Study or Quiz content for reuse on later visits.
+function saveDayCache(prefix, dayNumber, value) {
+  localStorage.setItem(`${prefix}_${dayNumber}`, JSON.stringify(value));
+}
+
 // Restores the last selected study day, defaulting to day one for new users.
 function getSavedDay() {
   const raw = localStorage.getItem('c_day');
@@ -37,6 +51,7 @@ let exam = null;
 let questionsReady = false;
 let questionLoadError = '';
 let studyRequestId = 0;
+let quizRequestId = 0;
 
 // Retrieves the user-provided Gemini key from this browser only.
 function getGeminiKey() {
@@ -75,12 +90,14 @@ async function fetchGeminiQuestions({ count, domain = 0, dayNumber = 0 }) {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Generate exactly ${count} high-difficulty, original CISSP practice questions. ${scope}
-Use complex workplace scenarios requiring risk prioritization, governance, architecture trade-offs, business context, and the CISSP "BEST/MOST appropriate" mindset.
-Make the distractors technically plausible and close to the correct answer, but ensure only one option is clearly best for the stated context.
-Avoid recall-only questions, obvious options, duplicate wording, and repeated scenarios. Each question must have exactly four plausible options and one best answer.
+            text: `Generate exactly ${count} original CISSP practice questions at a moderate-to-advanced level. ${scope}
+Create exactly 5 theory-review questions first, followed by exactly 5 practical application questions.
+Theory-review questions should test definitions, purpose, principles, relationships, and recognition of correct concepts.
+Application questions should use clear, realistic workplace situations, but avoid overly complex multi-layered traps.
+Use four plausible options and one clearly best answer. Explanations must teach why the answer is correct.
+Avoid obscure details, trick wording, duplicate wording, and repeated scenarios.
 Return only valid JSON with this shape:
-{"questions":[{"q":"...","options":["...","...","...","..."],"correct":0,"explanation":"...","topic":"...","domain":${domain || 0},"day":${dayNumber || 0}}]}
+{"questions":[{"q":"...","type":"theory|application","options":["...","...","...","..."],"correct":0,"explanation":"...","topic":"...","domain":${domain || 0},"day":${dayNumber || 0}}]}
 The correct field is a zero-based option index.`
           }]
         }],
@@ -285,25 +302,37 @@ function renderStudy() {
   scenario.textContent = '';
   studySections.innerHTML = '';
   const requestId = ++studyRequestId;
+  const cachedLesson = getDayCache('c_study', day);
+
+  if (cachedLesson) {
+    renderStudyLesson(cachedLesson);
+    return;
+  }
 
   fetchGeminiStudy(x).then(lesson => {
     if (requestId !== studyRequestId) return;
-    title.textContent = lesson.title;
-    intro.textContent = lesson.intro;
-    bullets.innerHTML = lesson.bullets.map(item => `<li>${item}</li>`).join('');
-    mindset.textContent = lesson.mindset;
-    traps.innerHTML = lesson.traps.map(item => `<li>${item}</li>`).join('');
-    scenario.textContent = lesson.scenario;
-    studySections.innerHTML = lesson.sections.map(section => `
-      <section class="mt-6">
-        <h3 class="text-xl font-bold text-cyan-300">${section.heading}</h3>
-        <div class="mt-2 leading-7 text-slate-300 whitespace-pre-line">${section.content}</div>
-      </section>
-    `).join('');
+    saveDayCache('c_study', day, lesson);
+    renderStudyLesson(lesson);
   }).catch(error => {
     if (requestId !== studyRequestId) return;
     showQuestionError(document.getElementById('intro'), error);
   });
+}
+
+// Renders a cached or freshly generated Study lesson.
+function renderStudyLesson(lesson) {
+  title.textContent = lesson.title;
+  intro.textContent = lesson.intro;
+  bullets.innerHTML = lesson.bullets.map(item => `<li>${item}</li>`).join('');
+  mindset.textContent = lesson.mindset;
+  traps.innerHTML = lesson.traps.map(item => `<li>${item}</li>`).join('');
+  scenario.textContent = lesson.scenario;
+  studySections.innerHTML = lesson.sections.map(section => `
+    <section class="mt-6">
+      <h3 class="text-xl font-bold text-cyan-300">${section.heading}</h3>
+      <div class="mt-2 leading-7 text-slate-300 whitespace-pre-line">${section.content}</div>
+    </section>
+  `).join('');
 }
 
 // Switches between the five main application views.
@@ -330,12 +359,24 @@ function complete() {
 // Starts a new Gemini-generated five-question daily quiz.
 async function renderQuiz() {
   qstate = { i: 0, score: 0, answered: null, shown: null };
+  const requestId = ++quizRequestId;
+  const cachedQuestions = getDayCache('c_quiz', day);
+  if (cachedQuestions?.length) {
+    qstate.questions = cachedQuestions;
+    questionsReady = true;
+    renderQ();
+    return;
+  }
+
   qbox.innerHTML = '<div class="text-slate-400">Đang tạo câu hỏi bằng Gemini...</div>';
   try {
     qstate.questions = await fetchGeminiQuestions({ count: 10, domain: cur().domain, dayNumber: day });
+    if (requestId !== quizRequestId) return;
+    saveDayCache('c_quiz', day, qstate.questions);
     questionsReady = true;
     renderQ();
   } catch (error) {
+    if (requestId !== quizRequestId) return;
     questionsReady = false;
     showQuestionError(qbox, error);
   }
@@ -359,7 +400,8 @@ function renderQ() {
   const q = qs[qstate.i];
   const shown = buildDisplayQuestion(q);
   qstate.shown = shown;
-  qmeta.textContent = `Q ${qstate.i + 1}/${qs.length} • Score ${qstate.score}`;
+  const typeLabel = q.type === 'theory' ? 'Ôn lý thuyết' : 'Ứng dụng';
+  qmeta.textContent = `Q ${qstate.i + 1}/${qs.length} • ${typeLabel} • Score ${qstate.score}`;
 
   qbox.innerHTML = `
     <div class="text-lg font-bold">${q.q}</div>
@@ -380,7 +422,7 @@ function ans(i) {
   if (qstate.answered !== null) return;
 
   qstate.answered = i;
-  const q = cur().questions[qstate.i];
+  const q = qstate.questions[qstate.i];
   const selectedOriginalIndex = qstate.shown.order[i];
   const isCorrect = selectedOriginalIndex === q.correct;
 
