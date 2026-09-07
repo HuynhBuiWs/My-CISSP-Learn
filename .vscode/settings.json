@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^python -c \"from pathlib import Path; p=Path\\(r'c:\\\\Users\\\\BUI NGU\\\\Documents\\\\GitHub\\\\My-CISSP-Learn\\\\index\\.html'\\); text=p\\.read_text\\(encoding='utf-8'\\); print\\('length:', len\\(text\\)\\); tokens=\\['const DAYS','function renderDays','function show','function startExam','function exportData','function resetData','localStorage','JSON\\.parse'\\];\nfor t in tokens: print\\(t, text\\.find\\(t\\)\\); print\\('line_count', text\\.count\\('\\\\\\\\n'\\)\\+1\\)\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^git -C \"C:\\\\Users\\\\BUI NGU\\\\Documents\\\\GitHub\\\\My-CISSP-Learn\" status --short$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
