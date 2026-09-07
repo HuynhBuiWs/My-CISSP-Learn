@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CISSP Master Study Companion & Daily Coach</title>
+    <title>CISSP Master Study Companion & Daily Coach V2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,6 +51,33 @@
         </div>
     </header>
 
+<!-- V2 DASHBOARD -->
+<div class="max-w-7xl mx-auto px-4 pb-2 w-full">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="glass-card rounded-xl p-4 border border-slate-800">
+      <div class="text-[10px] uppercase tracking-wider text-slate-500">Tiến độ</div>
+      <div id="v2Progress" class="text-xl font-bold text-cyan-400 mt-1">0%</div>
+      <div id="v2ProgressSub" class="text-[10px] text-slate-500 mt-1">0 / 84 ngày</div>
+    </div>
+    <div class="glass-card rounded-xl p-4 border border-slate-800">
+      <div class="text-[10px] uppercase tracking-wider text-slate-500">Quiz Score</div>
+      <div id="v2QuizScore" class="text-xl font-bold text-emerald-400 mt-1">0%</div>
+      <div id="v2QuizSub" class="text-[10px] text-slate-500 mt-1">Chưa có dữ liệu</div>
+    </div>
+    <div class="glass-card rounded-xl p-4 border border-slate-800">
+      <div class="text-[10px] uppercase tracking-wider text-slate-500">Câu sai</div>
+      <div id="v2Wrong" class="text-xl font-bold text-rose-400 mt-1">0</div>
+      <div class="text-[10px] text-slate-500 mt-1">Cần review</div>
+    </div>
+    <div class="glass-card rounded-xl p-4 border border-slate-800">
+      <div class="text-[10px] uppercase tracking-wider text-slate-500">Streak</div>
+      <div id="v2Streak" class="text-xl font-bold text-amber-400 mt-1">0 ngày</div>
+      <div class="text-[10px] text-slate-500 mt-1">Học liên tiếp</div>
+    </div>
+  </div>
+</div>
+
+
     <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Sidebar -->
         <div class="lg:col-span-4 flex flex-col space-y-4">
@@ -95,6 +122,7 @@
                 <button id="tabQuizBtn" onclick="switchTab('quiz')" class="flex-1 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition">✏️ Luyện Practice (EN)</button>
                 <button id="tabChatBtn" onclick="switchTab('chat')" class="flex-1 py-2 text-xs font-semibold rounded-lg text-emerald-400 hover:text-emerald-300 transition">💬 Chat Hỏi AI</button>
                 <button id="tabAiBtn" onclick="switchTab('ai')" class="flex-1 py-2 text-xs font-semibold rounded-lg text-amber-400 hover:text-amber-300 transition">✨ Sinh Đề Mới</button>
+                <button id="tabReviewBtn" onclick="switchTab('review')" class="flex-1 py-2 text-xs font-semibold rounded-lg text-rose-400 hover:text-rose-300 transition">🔁 Review</button>
             </div>
 
             <!-- TAB 1: THEORY -->
@@ -177,6 +205,18 @@
                     <div id="aiStatusMessage" class="mt-4 text-xs text-center text-slate-400 hidden"></div>
                 </div>
             </div>
+
+            <!-- TAB 5: REVIEW -->
+            <div id="tabReviewContent" class="glass-card rounded-2xl p-6 border border-slate-800 flex-grow hidden flex-col">
+              <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                <div>
+                  <h3 class="text-base font-bold text-white">🔁 Review câu sai</h3>
+                  <p class="text-xs text-slate-400">Tập trung vào các câu bạn đã trả lời sai.</p>
+                </div>
+                <button onclick="clearWrongAnswers()" class="text-[11px] text-slate-500 hover:text-slate-300">Xóa review</button>
+              </div>
+              <div id="reviewList" class="space-y-3 overflow-y-auto max-h-[520px]"></div>
+            </div>
         </div>
     </main>
 
@@ -257,12 +297,15 @@
 
         let selectedDay = 1, completedDays = JSON.parse(localStorage.getItem('cissp_completed_days')) || [];
         let currentQuizIdx = 0, currentQuizData = sampleQuiz;
-        let loadedQuizForDay = -1; 
+        let loadedQuizForDay = -1;
+        let quizAnswered = {};
+        let quizScore = 0; 
 
         document.addEventListener('DOMContentLoaded', () => {
             renderDaysList(); loadDayContent(1); updateProgressUI();
             const key = localStorage.getItem('cissp_gemini_api_key');
             if(key) document.getElementById('geminiApiKeyInput').value = key;
+             updateV2Stats();
         });
 
         function renderDaysList(filterDomain = 'all') {
@@ -315,23 +358,36 @@
             const pct = ((completedDays.length / 84) * 100).toFixed(1);
             document.getElementById('overallProgressText').innerText = `${pct}% (${completedDays.length}/84 Ngày)`;
             document.getElementById('progressBar').style.width = `${pct}%`;
-            document.getElementById('streakCount').innerText = `${completedDays.length} Ngày Streak`;
+            const done = [...new Set(completedDays)].sort((a,b)=>a-b);
+            let streak = 0;
+            if (done.length) { let expected = done[done.length - 1]; for (let i = done.length - 1; i >= 0; i--) { if (done[i] === expected) { streak++; expected--; } else break; } }
+            document.getElementById('streakCount').innerText = `${streak} Ngày Streak`;
         }
 
         function filterDaysByDomain() { renderDaysList(document.getElementById('domainFilter').value); }
-
         function switchTab(tab) {
-            ['task', 'quiz', 'chat', 'ai'].forEach(t => {
-                document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Content`).classList.add('hidden');
-                document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`).className = "flex-1 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition";
+            ['task', 'quiz', 'chat', 'ai', 'review'].forEach(t => {
+                const content = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Content`);
+                const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`);
+                if (content) content.classList.add('hidden');
+                if (btn) btn.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 transition";
             });
-            document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}Content`).classList.remove('hidden');
-            const activeColors = { task: 'bg-cyan-600 text-white', quiz: 'bg-cyan-600 text-white', chat: 'bg-emerald-600 text-white', ai: 'bg-amber-600 text-slate-950 font-bold' };
-            document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}Btn`).className = `flex-1 py-2 text-xs font-semibold rounded-lg transition ${activeColors[tab]}`;
 
-            if (tab === 'quiz' && loadedQuizForDay !== selectedDay) {
-                autoGenerateEnglishQuiz();
-            }
+            const content = document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}Content`);
+            const btn = document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}Btn`);
+            if (content) content.classList.remove('hidden');
+
+            const activeColors = {
+                task: 'bg-cyan-600 text-white',
+                quiz: 'bg-cyan-600 text-white',
+                chat: 'bg-emerald-600 text-white',
+                ai: 'bg-amber-600 text-slate-950 font-bold',
+                review: 'bg-rose-600 text-white'
+            };
+            if (btn) btn.className = `flex-1 py-2 text-xs font-semibold rounded-lg transition ${activeColors[tab]}`;
+
+            if (tab === 'quiz' && loadedQuizForDay !== selectedDay) autoGenerateEnglishQuiz();
+            if (tab === 'review') renderReviewList();
         }
 
 
@@ -519,6 +575,7 @@ Return exactly this structure:
         });
 
         currentQuizData = quizData;
+        resetQuizState();
         loadedQuizForDay = selectedDay;
 
         renderQuizQuestion(0);
@@ -529,21 +586,101 @@ Return exactly this structure:
         console.error("Gemini Quiz Error:", err);
     }
 }
+        let quizAnswers = {};
+        let quizScore = 0;
+        let quizWrong = JSON.parse(localStorage.getItem('cissp_wrong_answers') || '[]');
+
+        function resetQuizState() {
+            quizAnswers = {};
+            quizScore = 0;
+            document.getElementById('quizScoreText').innerText = '0 / 10';
+            updateV2Stats();
+        }
 
         function renderQuizQuestion(idx) {
-            currentQuizIdx = idx; const q = currentQuizData[idx] || currentQuizData[0];
+            currentQuizIdx = idx;
+            const q = currentQuizData[idx] || currentQuizData[0];
             document.getElementById('quizProgressText').innerText = `Câu ${idx + 1} / ${currentQuizData.length}`;
             document.getElementById('quizQuestionText').innerText = q.q;
-            document.getElementById('quizOptionsContainer').innerHTML = q.options.map((opt, i) => `<button onclick="checkQuizAnswer(${i})" class="w-full text-left p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500 text-xs text-slate-300 transition">${opt}</button>`).join('');
-            document.getElementById('quizExplanationBox').classList.add('hidden');
+
+            const answered = quizAnswers[idx];
+            const container = document.getElementById('quizOptionsContainer');
+
+            container.innerHTML = q.options.map((opt, i) => {
+                let cls = "w-full text-left p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 transition";
+                if (answered !== undefined) {
+                    if (i === q.correct) cls += " border-emerald-500 bg-emerald-950/50 text-emerald-300";
+                    else if (i === answered) cls += " border-rose-500 bg-rose-950/50 text-rose-300";
+                    else cls += " opacity-60";
+                } else {
+                    cls += " hover:border-cyan-500 cursor-pointer";
+                }
+                return `<button ${answered !== undefined ? 'disabled' : ''} onclick="checkQuizAnswer(${i})" class="${cls}">${opt}</button>`;
+            }).join('');
+
+            const explanation = document.getElementById('quizExplanationBox');
+            if (answered !== undefined) {
+                explanation.classList.remove('hidden');
+                const ok = answered === q.correct;
+                document.getElementById('quizExplanationText').innerHTML =
+                    `<b class="${ok ? 'text-emerald-400' : 'text-rose-400'}">${ok ? '✅ Correct' : '❌ Incorrect'}</b><br>${q.explanation}`;
+            } else {
+                explanation.classList.add('hidden');
+            }
+
+            document.getElementById('prevQuizBtn').disabled = idx === 0;
+            document.getElementById('nextQuizBtn').innerText =
+                idx === currentQuizData.length - 1 ? 'Hoàn tất ✓' : 'Next Question →';
+
+            document.getElementById('quizScoreText').innerText =
+                `${quizScore} / ${currentQuizData.length}`;
         }
 
-        function checkQuizAnswer() {
-            document.getElementById('quizExplanationText').innerText = currentQuizData[currentQuizIdx].explanation;
-            document.getElementById('quizExplanationBox').classList.remove('hidden');
+        function checkQuizAnswer(answerIdx) {
+            if (quizAnswers[currentQuizIdx] !== undefined) return;
+
+            const q = currentQuizData[currentQuizIdx];
+            quizAnswers[currentQuizIdx] = answerIdx;
+
+            if (answerIdx === q.correct) {
+                quizScore++;
+            } else {
+                quizWrong.unshift({
+                    day: selectedDay,
+                    question: q.q,
+                    selected: q.options[answerIdx],
+                    correct: q.options[q.correct],
+                    explanation: q.explanation,
+                    timestamp: Date.now()
+                });
+                quizWrong = quizWrong.slice(0, 100);
+                localStorage.setItem('cissp_wrong_answers', JSON.stringify(quizWrong));
+            }
+
+            renderQuizQuestion(currentQuizIdx);
+            updateV2Stats();
+
+            if (Object.keys(quizAnswers).length === currentQuizData.length) {
+                setTimeout(() => {
+                    const pct = Math.round((quizScore / currentQuizData.length) * 100);
+                    document.getElementById('quizScoreText').innerText = `Hoàn tất: ${quizScore}/${currentQuizData.length} (${pct}%)`;
+                    updateV2Stats();
+                }, 100);
+            }
         }
-        function nextQuizQuestion() { if (currentQuizIdx < currentQuizData.length - 1) renderQuizQuestion(currentQuizIdx + 1); }
-        function prevQuizQuestion() { if (currentQuizIdx > 0) renderQuizQuestion(currentQuizIdx - 1); }
+
+        function nextQuizQuestion() {
+            if (currentQuizIdx < currentQuizData.length - 1) {
+                renderQuizQuestion(currentQuizIdx + 1);
+            } else if (Object.keys(quizAnswers).length === currentQuizData.length) {
+                alert(`Kết quả: ${quizScore}/${currentQuizData.length} (${Math.round(quizScore/currentQuizData.length*100)}%)`);
+            }
+        }
+
+        function prevQuizQuestion() {
+            if (currentQuizIdx > 0) renderQuizQuestion(currentQuizIdx - 1);
+        }
+
 
         async function sendChatMessage(e) {
             e.preventDefault(); 
@@ -605,6 +742,58 @@ Return exactly this structure:
             } finally { 
                 btn.disabled = false; btn.innerText = "⚡ Sinh 10 Câu Hỏi Mới"; 
             }
+        }
+
+
+        function calculateRealStreak() {
+            const days = [...new Set(completedDays)].sort((a,b) => a-b);
+            if (!days.length) return 0;
+            let streak = 1;
+            for (let i = days.length - 1; i > 0; i--) {
+                if (days[i] - days[i-1] === 1) streak++;
+                else break;
+            }
+            return streak;
+        }
+
+        function updateV2Stats() {
+            const progress = Math.round((completedDays.length / 84) * 100);
+            document.getElementById('v2Progress').innerText = `${progress}%`;
+            document.getElementById('v2ProgressSub').innerText = `${completedDays.length} / 84 ngày`;
+
+            const total = currentQuizData?.length || 0;
+            const pct = total ? Math.round((quizScore / total) * 100) : 0;
+            document.getElementById('v2QuizScore').innerText = `${pct}%`;
+            document.getElementById('v2QuizSub').innerText = total ? `${quizScore} / ${total} câu` : 'Chưa có dữ liệu';
+
+            document.getElementById('v2Wrong').innerText = quizWrong.length;
+            document.getElementById('v2Streak').innerText = `${calculateRealStreak()} ngày`;
+        }
+
+        function renderReviewList() {
+            const box = document.getElementById('reviewList');
+            if (!quizWrong.length) {
+                box.innerHTML = '<div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-400">🎉 Chưa có câu sai. Tiếp tục luyện tập!</div>';
+                return;
+            }
+
+            box.innerHTML = quizWrong.map((x, i) => `
+                <div class="p-4 rounded-xl bg-slate-900 border border-slate-800">
+                    <div class="text-[10px] text-cyan-400 mb-2">DAY ${x.day}</div>
+                    <div class="text-xs font-semibold text-slate-100 mb-3">${x.question}</div>
+                    <div class="text-[11px] text-rose-300 mb-1">Bạn chọn: ${x.selected}</div>
+                    <div class="text-[11px] text-emerald-300 mb-2">Đáp án đúng: ${x.correct}</div>
+                    <div class="text-[11px] text-slate-400 leading-relaxed">${x.explanation}</div>
+                </div>
+            `).join('');
+        }
+
+        function clearWrongAnswers() {
+            if (!confirm('Xóa toàn bộ danh sách câu sai?')) return;
+            quizWrong = [];
+            localStorage.setItem('cissp_wrong_answers', '[]');
+            renderReviewList();
+            updateV2Stats();
         }
 
         function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
